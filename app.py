@@ -4,10 +4,10 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 from cache import SimpleCache
+import difflib
 
 app = Flask(__name__)
 
-# Modello leggero per CPU
 model_name = "EleutherAI/gpt-neo-125M"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
@@ -15,7 +15,6 @@ model = AutoModelForCausalLM.from_pretrained(model_name)
 cache = SimpleCache()
 MAX_LINES = 10000
 
-# Linguaggi supportati
 SUPPORTED_LANGS = ["php","c#","c++","lua","javascript","python","rust","kotlin","perl","scala","go"]
 
 def chunk_code(code, max_lines=MAX_LINES):
@@ -34,9 +33,29 @@ def color_code(code, language="python", fix_lines=None):
                 code_lines[i-1] = f'<span class="fix-line">{code_lines[i-1]}</span>'
         highlighted_code = "\n".join(code_lines)
 
-    # Wrappa in <pre> con classi per line numbers
     html = f'<pre class="line-numbers language-{language}"><code>{highlighted_code}</code></pre>'
     return html
+
+def get_modified_lines(original_code, fixed_code):
+    """
+    Restituisce gli indici delle linee modificate o aggiunte
+    """
+    original_lines = original_code.split("\n")
+    fixed_lines = fixed_code.split("\n")
+    diff = list(difflib.ndiff(original_lines, fixed_lines))
+    modified_lines = []
+    line_num = 0
+    for d in diff:
+        code = d[2:]
+        if d.startswith("  "):
+            line_num += 1
+        elif d.startswith("+ "):
+            modified_lines.append(line_num + 1)  # linea aggiunta/ modificata
+            line_num += 1
+        elif d.startswith("- "):
+            # linea rimossa: non incrementiamo line_num
+            continue
+    return modified_lines
 
 def generate_response(task, code, target_lang=None, max_length=1200):
     if code.count('\n') > MAX_LINES:
@@ -60,10 +79,8 @@ def generate_response(task, code, target_lang=None, max_length=1200):
         lang = target_lang
         fix_lines = None
     elif task=="fix":
-        prompt = f"# Analizza e correggi errori nel codice seguente. Indica le linee modificate con commento\n{code}"
+        prompt = f"# Analizza e correggi errori nel codice seguente\n{code}"
         lang = "python"
-        # Simuliamo highlight prime 10 righe corrette (in pratica qui potresti fare parsing reale)
-        fix_lines = list(range(1, min(10, len(code.split("\n")))+1))
     else:
         return "Task non valido"
 
@@ -78,6 +95,13 @@ def generate_response(task, code, target_lang=None, max_length=1200):
     )
 
     result_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    if task=="fix":
+        # calcola linee modificate
+        fix_lines = get_modified_lines(code, result_text)
+    else:
+        fix_lines = None
+
     html_result = color_code(result_text, language=lang, fix_lines=fix_lines)
     cache.set(key, html_result)
     return html_result
@@ -93,9 +117,9 @@ def code():
     task = data.get("task","")
     target_lang = data.get("target_lang",None)
 
-    result = generate_response(task, code_text, target_lang)
+    result = generate_response(code_text=code_text, task=task, target_lang=target_lang)
     return jsonify({"result": result})
 
 if __name__=="__main__":
     app.run()
-    
+        
