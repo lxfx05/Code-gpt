@@ -3,7 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <title>Code Assistant Enterprise</title>
+
+<!-- Prism CSS -->
 <link rel="stylesheet" href="/static/prism.css">
+
+<style>
+body {
+    background-color: #1e1e1e;
+    color: #f8f8f2;
+    font-family: Consolas, Monaco, 'Andale Mono', monospace;
+    margin: 20px;
+}
+textarea {
+    width: 100%;
+    font-family: monospace;
+    font-size: 14px;
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+    border: 1px solid #555;
+    border-radius: 5px;
+    padding: 10px;
+}
+button {
+    background-color: #66d9ef;
+    border: none;
+    color: #000;
+    padding: 8px 16px;
+    margin-right: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+button:hover {
+    background-color: #4fb0c6;
+}
+select {
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 5px;
+}
+#output {
+    margin-top: 20px;
+}
+</style>
+
 <script>
 async function sendTask(task) {
     const code = document.getElementById("code").value;
@@ -17,21 +62,49 @@ async function sendTask(task) {
 
     const data = await res.json();
     document.getElementById("output").innerHTML = data.result;
+
+    // Ricalcola Prism syntax highlighting
+    Prism.highlightAll();
 }
 </script>
 </head>
 <body>
+
 <h1>Code Assistant Enterprise</h1>
-<textarea id="code" rows="20" cols="100" placeholder="Inserisci il codice qui..."></textarea><br><br>
+
+<!-- Input codice -->
+<textarea id="code" rows="20" placeholder="Inserisci il codice qui..."></textarea><br><br>
+
+<!-- Linguaggi per traduzione -->
+<label for="targetLang">Lingua di destinazione:</label>
 <select id="targetLang">
   {% for lang in languages %}
     <option value="{{lang}}">{{lang}}</option>
   {% endfor %}
 </select><br><br>
+
+<!-- Pulsanti task -->
 <button onclick="sendTask('spiegazione')">Spiegazione</button>
 <button onclick="sendTask('traduzione')">Traduzione</button>
 <button onclick="sendTask('fix')">Fix</button>
+
+<!-- Output -->
 <h2>Output:</h2>
 <div id="output" style="white-space: pre-wrap;"></div>
+
+<!-- Prism JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-perl.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-scala.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+
 </body>
 </html>
