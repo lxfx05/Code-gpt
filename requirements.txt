@@ -1,4 +1,4 @@
-flask==2.3.6
+flask==2.3.3
 transformers==4.34.0
 torch==2.1.0+cpu --find-links https://download.pytorch.org/whl/cpu/torch_stable.html
 pygments==2.16.1
