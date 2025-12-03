@@ -1,110 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Code Assistant Enterprise</title>
-
-<!-- Prism CSS -->
-<link rel="stylesheet" href="/static/prism.css">
-
-<style>
-body {
-    background-color: #1e1e1e;
-    color: #f8f8f2;
-    font-family: Consolas, Monaco, 'Andale Mono', monospace;
-    margin: 20px;
-}
-textarea {
-    width: 100%;
-    font-family: monospace;
-    font-size: 14px;
-    background-color: #2d2d2d;
-    color: #f8f8f2;
-    border: 1px solid #555;
-    border-radius: 5px;
-    padding: 10px;
-}
-button {
-    background-color: #66d9ef;
-    border: none;
-    color: #000;
-    padding: 8px 16px;
-    margin-right: 5px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-button:hover {
-    background-color: #4fb0c6;
-}
-select {
-    background-color: #2d2d2d;
-    color: #f8f8f2;
-    border: 1px solid #555;
-    border-radius: 4px;
-    padding: 5px;
-}
-#output {
-    margin-top: 20px;
-}
-</style>
-
-<script>
-async function sendTask(task) {
-    const code = document.getElementById("code").value;
-    const targetLang = document.getElementById("targetLang").value;
-
-    const res = await fetch("/api/code", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({code, task, target_lang: targetLang})
-    });
-
-    const data = await res.json();
-    document.getElementById("output").innerHTML = data.result;
-
-    // Ricalcola Prism syntax highlighting
-    Prism.highlightAll();
-}
-</script>
+    <meta charset="UTF-8">
+    <title>Code Assistant</title>
+    <link rel="stylesheet" href="/static/prism.css">
+    <style>
+        .fix-line { background-color: #d4f8d4; display:block; }
+        pre { padding:10px; border:1px solid #ccc; border-radius:5px; }
+    </style>
 </head>
 <body>
+    <h1>Code Assistant</h1>
+    <textarea id="code" rows="15" cols="80"></textarea><br>
+    <select id="task">
+        <option value="spiegazione">Spiegazione</option>
+        <option value="traduzione">Traduzione</option>
+        <option value="fix">Fix</option>
+    </select>
+    <select id="lang">
+        <option value="python">Python</option>
+        <option value="javascript">JavaScript</option>
+        <!-- Aggiungi altri linguaggi -->
+    </select>
+    <button onclick="sendCode()">Esegui</button>
+    <div id="result"></div>
 
-<h1>Code Assistant Enterprise</h1>
-
-<!-- Input codice -->
-<textarea id="code" rows="20" placeholder="Inserisci il codice qui..."></textarea><br><br>
-
-<!-- Linguaggi per traduzione -->
-<label for="targetLang">Lingua di destinazione:</label>
-<select id="targetLang">
-  {% for lang in languages %}
-    <option value="{{lang}}">{{lang}}</option>
-  {% endfor %}
-</select><br><br>
-
-<!-- Pulsanti task -->
-<button onclick="sendTask('spiegazione')">Spiegazione</button>
-<button onclick="sendTask('traduzione')">Traduzione</button>
-<button onclick="sendTask('fix')">Fix</button>
-
-<!-- Output -->
-<h2>Output:</h2>
-<div id="output" style="white-space: pre-wrap;"></div>
-
-<!-- Prism JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-perl.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-scala.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
-
+    <script>
+        async function sendCode() {
+            const code = document.getElementById("code").value;
+            const task = document.getElementById("task").value;
+            const target_lang = document.getElementById("lang").value;
+            const res = await fetch("/api/code", {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({code, task, target_lang})
+            });
+            const data = await res.json();
+            document.getElementById("result").innerHTML = data.result;
+        }
+    </script>
 </body>
 </html>
