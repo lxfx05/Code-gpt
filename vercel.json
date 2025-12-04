@@ -4,14 +4,16 @@
     {
       "src": "app.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "50mb" }
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     }
   ],
   "routes": [
     { "src": "/(.*)", "dest": "app.py" }
   ],
   "env": {
-    "huggingface_api_key": "@huggingface_api_key",
+    "HUGGINGFACE_API_KEY": "@huggingface_api_key",
     "PYTHONUNBUFFERED": "1"
   }
 }
