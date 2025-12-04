@@ -11,7 +11,7 @@
     { "src": "/(.*)", "dest": "app.py" }
   ],
   "env": {
-    "HUGGINGFACE_API_KEY": "@huggingface_api_key",
+    "huggingface_api_key": "@huggingface_api_key",
     "PYTHONUNBUFFERED": "1"
   }
 }
