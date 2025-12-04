@@ -1,33 +1,16 @@
-import os
 import logging
-import requests
 from flask import Flask, request, jsonify, render_template
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 import difflib
-from dotenv import load_dotenv
-
-# Carica variabili da .env.local se esiste
-load_dotenv()
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# Config
 MAX_LINES = 10000
 SUPPORTED_LANGS = ["php","c#","c++","lua","javascript","python","rust","kotlin","perl","scala","go"]
 
-# HuggingFace API
-HUGGINGFACE_API_KEY = os.environ.get("HUGGINGFACE_API_KEY")
-if not HUGGINGFACE_API_KEY:
-    raise Exception("HUGGINGFACE_API_KEY non impostata!")
-
-# Modello Qwen3-4B-GGUF
-HUGGINGFACE_URL = "https://api-inference.huggingface.co/models/Qwen-3-4B-GGUF"
-HEADERS = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
-
-# Funzioni utili
 def chunk_code(code, max_lines=MAX_LINES):
     lines = code.split("\n")
     return ["\n".join(lines[i:i+max_lines]) for i in range(0, len(lines), max_lines)]
@@ -59,12 +42,20 @@ def get_modified_lines(original_code, fixed_code):
             line_num += 1
     return modified_lines
 
-def query_hf_api(prompt, max_length=512):
-    payload = {"inputs": prompt, "parameters": {"max_new_tokens": max_length}}
-    response = requests.post(HUGGINGFACE_URL, headers=HEADERS, json=payload, timeout=60)
-    response.raise_for_status()
-    data = response.json()
-    return data[0]["generated_text"]
+# Funzioni base senza AI
+def explain_code(code):
+    lines = code.split("\n")
+    explanation = "\n".join([f"Linea {i+1}: {line[:50]}..." for i,line in enumerate(lines)])
+    return explanation
+
+def translate_code(code, target_lang):
+    # Dummy translation: aggiunge commento di lingua
+    return f"// Traduzione in {target_lang}\n{code}"
+
+def fix_code(code):
+    # Dummy fix: rimuove spazi extra
+    fixed = "\n".join([line.rstrip() for line in code.split("\n")])
+    return fixed
 
 def generate_response(task, code, target_lang=None):
     if code.count("\n") > MAX_LINES:
@@ -73,29 +64,21 @@ def generate_response(task, code, target_lang=None):
         return f"Linguaggio non supportato: {target_lang}"
 
     if task=="spiegazione":
-        prompt = f"# Spiega passo passo il codice seguente:\n{code}"
+        result = explain_code(code)
         lang = "python"
         fix_lines = None
     elif task=="traduzione":
-        prompt = f"# Traduci il codice seguente in {target_lang} mantenendo logica:\n{code}"
+        result = translate_code(code, target_lang)
         lang = target_lang
         fix_lines = None
     elif task=="fix":
-        prompt = f"# Correggi eventuali errori nel codice seguente:\n{code}"
+        result = fix_code(code)
         lang = "python"
+        fix_lines = get_modified_lines(code, result)
     else:
         return "Task non valido"
 
-    logging.info(f"Esecuzione task: {task}, righe codice: {len(code.splitlines())}")
-    result = query_hf_api(prompt)
-
-    if task=="fix":
-        fix_lines = get_modified_lines(code, result)
-    else:
-        fix_lines = None
-
     html_result = color_code(result, language=lang, fix_lines=fix_lines)
-    logging.info("Risposta generata correttamente")
     return html_result
 
 # Routes
