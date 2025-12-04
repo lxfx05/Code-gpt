@@ -4,16 +4,13 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 import difflib
+import ast
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 MAX_LINES = 10000
 SUPPORTED_LANGS = ["php","c#","c++","lua","javascript","python","rust","kotlin","perl","scala","go"]
-
-def chunk_code(code, max_lines=MAX_LINES):
-    lines = code.split("\n")
-    return ["\n".join(lines[i:i+max_lines]) for i in range(0, len(lines), max_lines)]
 
 def color_code(code, language="python", fix_lines=None):
     lexer = get_lexer_by_name(language.lower())
@@ -42,20 +39,53 @@ def get_modified_lines(original_code, fixed_code):
             line_num += 1
     return modified_lines
 
-# Funzioni base senza AI
+# --- Funzioni di reasoning locale ---
 def explain_code(code):
+    """Analizza codice Python e genera spiegazione logica linea per linea"""
     lines = code.split("\n")
-    explanation = "\n".join([f"Linea {i+1}: {line[:50]}..." for i,line in enumerate(lines)])
-    return explanation
-
-def translate_code(code, target_lang):
-    # Dummy translation: aggiunge commento di lingua
-    return f"// Traduzione in {target_lang}\n{code}"
+    explanation = []
+    for i, line in enumerate(lines):
+        line_stripped = line.strip()
+        if not line_stripped:
+            continue
+        if line_stripped.startswith("def "):
+            explanation.append(f"Linea {i+1}: definizione funzione {line_stripped[4:].split('(')[0]}")
+        elif line_stripped.startswith("class "):
+            explanation.append(f"Linea {i+1}: definizione classe {line_stripped[6:].split('(')[0]}")
+        elif "=" in line_stripped:
+            var_name = line_stripped.split("=")[0].strip()
+            explanation.append(f"Linea {i+1}: assegnazione variabile {var_name}")
+        else:
+            explanation.append(f"Linea {i+1}: operazione/istruzione")
+    return "\n".join(explanation)
 
 def fix_code(code):
-    # Dummy fix: rimuove spazi extra
-    fixed = "\n".join([line.rstrip() for line in code.split("\n")])
-    return fixed
+    """Semplice sistema di fix: rimuove spazi finali e righe vuote consecutive"""
+    lines = code.split("\n")
+    fixed_lines = []
+    prev_empty = False
+    for line in lines:
+        l = line.rstrip()
+        if not l:
+            if prev_empty:
+                continue
+            prev_empty = True
+        else:
+            prev_empty = False
+        fixed_lines.append(l)
+    return "\n".join(fixed_lines)
+
+def translate_code(code, target_lang):
+    """Traduzione minimale fra linguaggi comuni (Python -> JS per esempio)"""
+    lines = code.split("\n")
+    translated = []
+    for line in lines:
+        l = line.rstrip()
+        if l.startswith("print(") and target_lang.lower() == "javascript":
+            translated.append("console.log(" + l[6:])
+        else:
+            translated.append(l)
+    return "\n".join(translated)
 
 def generate_response(task, code, target_lang=None):
     if code.count("\n") > MAX_LINES:
@@ -81,7 +111,7 @@ def generate_response(task, code, target_lang=None):
     html_result = color_code(result, language=lang, fix_lines=fix_lines)
     return html_result
 
-# Routes
+# --- Routes ---
 @app.route("/")
 def index():
     return render_template("index.html", languages=SUPPORTED_LANGS)
